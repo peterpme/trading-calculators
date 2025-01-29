@@ -26,7 +26,7 @@
             border-radius: 8px;
         }
 
-        h1 {
+        h1, h2 {
             color: #333;
             margin-bottom: 20px;
         }
@@ -100,15 +100,6 @@
             color: #333;
         }
 
-        .alert {
-            background: #fff3cd;
-            border: 1px solid #ffeeba;
-            color: #856404;
-            padding: 12px;
-            border-radius: 4px;
-            margin: 10px 0;
-        }
-
         .info {
             font-size: 0.9em;
             color: #666;
@@ -151,9 +142,6 @@
                     </ul>
                 </div>
             </div>
-            <div class="alert">
-                Funding payments occur every 8 hours at 00:00 UTC, 08:00 UTC, and 16:00 UTC
-            </div>
         </div>
 
         <div class="section">
@@ -162,7 +150,7 @@
                 <div class="grid">
                     <div class="input-group">
                         <label for="btcPrice">BTC Price (USD)</label>
-                        <input type="number" id="btcPrice" value="40000">
+                        <input type="number" id="btcPrice" value="100000">
                         <div class="info">Current market price of Bitcoin</div>
                     </div>
                     <div class="input-group">
@@ -174,14 +162,14 @@
                 <div class="grid">
                     <div class="input-group">
                         <label for="funding">Funding Rate (%)</label>
-                        <input type="number" id="funding" value="0.01" step="0.001">
+                        <input type="number" id="funding" value="0.010528" step="0.000001">
                         <div class="info">Current funding rate percentage</div>
                     </div>
                     <div class="input-group">
                         <label for="duration">Duration</label>
                         <select id="duration">
-                            <option value="1">1 hour</option>
-                            <option value="4">4 hours</option>
+                            <option value="8">8 hours</option>
+                            <option value="24">24 hours</option>
                         </select>
                         <div class="info">Duration for funding rate calculation</div>
                     </div>
@@ -190,19 +178,39 @@
                 <div class="results">
                     <div class="result-item">
                         <label>Position Value</label>
-                        <div class="result-value">$<span id="positionValue">40,000.00</span></div>
+                        <div class="result-value">$<span id="positionValue">100,000.00</span></div>
                     </div>
                     <div class="result-item">
-                        <label>Funding Payment (per hour)</label>
-                        <div class="result-value">$<span id="paymentPerHour">4.00</span></div>
-                    </div>
-                    <div class="result-item">
-                        <label>Total Funding Payments (for selected duration)</label>
-                        <div class="result-value">$<span id="totalPayment">4.00</span></div>
+                        <label>Funding Payment (for selected duration)</label>
+                        <div class="result-value">$<span id="totalPayment">10.53</span></div>
                     </div>
                     <div class="result-item">
                         <label>Payment Direction</label>
                         <div class="result-value" id="direction">Longs pay shorts</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Lending Yield Calculator</h2>
+            <div class="calculator">
+                <div class="grid">
+                    <div class="input-group">
+                        <label for="lendingAPY">Current Exchange Lending APY (%)</label>
+                        <input type="number" id="lendingAPY" value="1.1" step="0.1">
+                        <div class="info">Annual Percentage Yield for lending</div>
+                    </div>
+                </div>
+
+                <div class="results">
+                    <div class="result-item">
+                        <label>Daily Yield</label>
+                        <div class="result-value">$<span id="dailyYield">0.00</span></div>
+                    </div>
+                    <div class="result-item">
+                        <label>Annual Yield</label>
+                        <div class="result-value">$<span id="annualYield">0.00</span></div>
                     </div>
                 </div>
             </div>
@@ -218,21 +226,25 @@
             const btcPrice = parseFloat(document.getElementById('btcPrice').value) || 0;
             const positionBTC = parseFloat(document.getElementById('positionBTC').value) || 0;
             const fundingRate = parseFloat(document.getElementById('funding').value) || 0;
-            const duration = parseInt(document.getElementById('duration').value) || 1;
+            const duration = parseInt(document.getElementById('duration').value) || 8;
+            const lendingAPY = parseFloat(document.getElementById('lendingAPY').value) || 0;
             
             // Calculate position value
             const positionValue = btcPrice * positionBTC;
             
-            // Calculate funding payment per hour
-            const paymentPerHour = Math.abs((positionValue * fundingRate) / 100 / 8); // Divide by 8 to get hourly rate
+            // Calculate funding payment for the duration
+            const paymentPerPeriod = (positionValue * fundingRate) / 100;
+            const totalPayment = Math.abs(paymentPerPeriod * (duration / 8)); // Adjust for 8-hour periods
             
-            // Calculate total funding payment for the duration
-            const totalPayment = paymentPerHour * duration;
+            // Calculate lending yield
+            const dailyYield = (positionValue * (lendingAPY / 100)) / 365;
+            const annualYield = positionValue * (lendingAPY / 100);
             
             // Update UI
             document.getElementById('positionValue').textContent = formatNumber(positionValue);
-            document.getElementById('paymentPerHour').textContent = formatNumber(paymentPerHour);
             document.getElementById('totalPayment').textContent = formatNumber(totalPayment);
+            document.getElementById('dailyYield').textContent = formatNumber(dailyYield);
+            document.getElementById('annualYield').textContent = formatNumber(annualYield);
             
             const direction = document.getElementById('direction');
             if (fundingRate > 0) {
@@ -245,7 +257,7 @@
         }
 
         // Add event listeners to all inputs
-        const inputs = ['btcPrice', 'positionBTC', 'funding', 'duration'];
+        const inputs = ['btcPrice', 'positionBTC', 'funding', 'duration', 'lendingAPY'];
         inputs.forEach(id => {
             document.getElementById(id).addEventListener('input', calculateFunding);
         });
