@@ -165,6 +165,14 @@
                         <div class="info">Amount of BTC in your position</div>
                     </div>
                 </div>
+                <div class="input-group">
+                    <label for="positionType">Position Type</label>
+                    <select id="positionType">
+                        <option value="short">Short</option>
+                        <option value="long">Long</option>
+                    </select>
+                    <div class="info">Short positions receive funding when rate is positive</div>
+                </div>
                 <div class="grid">
                     <div class="input-group">
                         <label for="funding">Funding Rate (%)</label>
@@ -198,15 +206,15 @@
                     </div>
                     <div class="result-item">
                         <label>Annualized Funding Rate Yield</label>
-                        <div class="result-value"><span id="annualizedFunding">0.00</span>%</div>
+                        <div class="result-value"><span id="annualizedFunding">0.00</span>% ($<span id="annualizedFundingUsd">0.00</span>)</div>
                     </div>
                     <div class="result-item">
                         <label>Lending Yield (Annual)</label>
-                        <div class="result-value"><span id="annualYield">0.00</span>%</div>
+                        <div class="result-value"><span id="annualYield">0.00</span>% ($<span id="annualLendingUsd">0.00</span>)</div>
                     </div>
                     <div class="result-item total-yield">
                         <label>Combined Annual Yield</label>
-                        <div class="result-value"><span id="combinedYield">0.00</span>%</div>
+                        <div class="result-value"><span id="combinedYield">0.00</span>% ($<span id="combinedYieldUsd">0.00</span>)</div>
                         <div class="info">Sum of annualized funding rate and lending yield</div>
                     </div>
                 </div>
@@ -236,15 +244,27 @@
             // Calculate annualized funding rate (3 periods per day * 365 days)
             const annualizedFundingRate = fundingRate * 3 * 365;
             
-            // Calculate combined yield
-            const combinedYield = (fundingRate < 0 ? annualizedFundingRate : -annualizedFundingRate) + lendingAPY;
+            // Get position type
+            const positionType = document.getElementById('positionType').value;
+
+            // Calculate combined yield based on position type
+            const fundingYield = positionType === 'short' ? annualizedFundingRate : -annualizedFundingRate;
+            const combinedYield = fundingYield + lendingAPY;
+
+            // Calculate annualized USD values
+            const annualizedFundingUsd = (positionValue * annualizedFundingRate) / 100;
+            const annualLendingUsd = (positionValue * lendingAPY) / 100;
+            const combinedYieldUsd = (positionValue * combinedYield) / 100;
             
             // Update UI
             document.getElementById('positionValue').textContent = formatNumber(positionValue);
             document.getElementById('totalPayment').textContent = formatNumber(totalPayment);
             document.getElementById('annualizedFunding').textContent = formatNumber(Math.abs(annualizedFundingRate));
+            document.getElementById('annualizedFundingUsd').textContent = formatNumber(Math.abs(annualizedFundingUsd));
             document.getElementById('annualYield').textContent = formatNumber(lendingAPY);
+            document.getElementById('annualLendingUsd').textContent = formatNumber(annualLendingUsd);
             document.getElementById('combinedYield').textContent = formatNumber(combinedYield);
+            document.getElementById('combinedYieldUsd').textContent = formatNumber(combinedYieldUsd);
             
             const direction = document.getElementById('direction');
             if (fundingRate > 0) {
@@ -257,7 +277,7 @@
         }
 
         // Add event listeners to all inputs
-        const inputs = ['btcPrice', 'positionBTC', 'funding', 'duration', 'lendingAPY'];
+        const inputs = ['btcPrice', 'positionBTC', 'funding', 'duration', 'lendingAPY', 'positionType'];
         inputs.forEach(id => {
             document.getElementById(id).addEventListener('input', calculateRates);
         });
